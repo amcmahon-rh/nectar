@@ -1,10 +1,10 @@
 import datetime
 import errno
-import httplib
+import http.client
 import threading
 import time
-import urllib
-import urlparse
+import urllib.request, urllib.parse, urllib.error
+import urllib.parse
 from gettext import gettext as _
 from logging import getLogger
 
@@ -274,7 +274,7 @@ class HTTPThreadedDownloader(Downloader):
         report = DownloadReport.from_download_request(request)
         report.download_started()
         self.fire_download_started(report)
-        netloc = urlparse.urlparse(request.url).netloc
+        netloc = urllib.parse.urlparse(request.url).netloc
         for nretry in range(DEFAULT_GENERIC_TRIES):
             try:
                 if self.is_canceled or request.canceled:
@@ -292,7 +292,7 @@ class HTTPThreadedDownloader(Downloader):
                 report.headers = response.headers
                 self.fire_download_headers(report)
 
-                if response.status_code != httplib.OK:
+                if response.status_code != http.client.OK:
                     raise DownloadFailed(request.url, response.status_code, response.reason)
 
                 progress_interval = self.progress_interval
@@ -408,7 +408,7 @@ class HTTPThreadedDownloader(Downloader):
         # a header 'content-encoding: x-gzip' when it's really just a gzipped
         # file. In that case, we must ignore the declared encoding and thus prevent
         # the requests library from automatically decompressing the file.
-        parse_url = urlparse.urlparse(request.url)
+        parse_url = urllib.parse.urlparse(request.url)
 
         if parse_url.path.endswith('.gz'):
             ignore_encoding = True
@@ -481,14 +481,14 @@ def _add_proxy(session, config):
         return
 
     # Set session.proxies according to given url and port
-    protocol, remainder = urllib.splittype(config.proxy_url)
-    host, remainder = urllib.splithost(remainder)
+    protocol, remainder = urllib.parse.splittype(config.proxy_url)
+    host, remainder = urllib.parse.splithost(remainder)
     url = ':'.join((host, str(config.proxy_port)))
 
     if config.proxy_username:
         password_part = config.get('proxy_password', '') and ':%s' % config.proxy_password
         auth = config.proxy_username + password_part
-        auth = urllib.quote(auth, safe=':')
+        auth = urllib.parse.quote(auth, safe=':')
         url = '@'.join((auth, url))
 
     session.proxies['https'] = '://'.join((protocol, url))
